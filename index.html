@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Selection</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+    }
+    h1 {
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+      color: #333;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 0.8rem;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.3s ease;
+      text-decoration: none;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-user { background: #2575fc; }
+    .btn-user:hover { background: #1e63d9; }
+    .btn-admin { background: #6a11cb; }
+    .btn-admin:hover { background: #530fa6; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Select Dashboard</h1>
+    <a href="user.html" class="btn btn-user">User Dashboard</a>
+    <a href="admin.html" class="btn btn-admin">Admin Dashboard</a>
+  </div>
+</body>
+</html>
