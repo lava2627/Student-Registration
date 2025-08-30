@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WE Trust Registration</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+    h2 { color: #333; }
+    form { background: #fff; padding: 20px; border-radius: 10px; max-width: 600px; margin: auto; }
+    label { display: block; margin-top: 10px; }
+    input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; }
+    button { margin-top: 15px; padding: 10px 15px; border: none; background: #28a745; color: white; border-radius: 5px; cursor: pointer; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    .toast { position: fixed; top: 20px; right: 20px; padding: 10px; border-radius: 5px; display: none; }
+    .success { background: #28a745; color: white; }
+    .error { background: #dc3545; color: white; }
+    .warning { background: #ffc107; color: black; }
+  </style>
+</head>
+<body>
+
+  <h2>WE Trust Registration Portal</h2>
+
+  <form id="regForm">
+    <label>Membership Number:</label>
+    <input type="text" id="membershipInput" required>
+
+    <button type="button" onclick="fetchMembership()">Fetch Details</button>
+
+    <div id="pastSeminars"></div>
+    <div id="nextSeminar"></div>
+
+    <label>Participant Type:</label>
+    <select id="participantType">
+      <option value="Student">Student (First time)</option>
+      <option value="Auditor">Auditor (Repeat)</option>
+    </select>
+
+    <label>Mode of Attendance:</label>
+    <select id="mode">
+      <option value="Direct">Direct</option>
+      <option value="Online">Online</option>
+    </select>
+
+    <label>Name:</label>
+    <input type="text" id="name">
+
+    <label>Mobile:</label>
+    <input type="text" id="mobile">
+
+    <label>Email:</label>
+    <input type="email" id="email">
+
+    <label>Address:</label>
+    <textarea id="address"></textarea>
+
+    <label>Pincode:</label>
+    <input type="text" id="pincode">
+
+    <label>Fees Paid:</label>
+    <select id="feesPaid">
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+
+    <button type="button" onclick="registerUser()">Submit Registration</button>
+  </form>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby3UOHbVYBTrfZYGA14kX3jE-e1sXG8BpejF_afGY8eTfOSEc6dQuXczJkN7Ct5eTYxsQ/exec"; // Replace with Apps Script Web App URL
+    let seminarData = {};
+    let nextEligible = null;
+
+    function showToast(msg, type="success") {
+      let toast = document.getElementById("toast");
+      toast.className = "toast " + type;
+      toast.textContent = msg;
+      toast.style.display = "block";
+      setTimeout(()=> toast.style.display="none", 4000);
+    }
+
+    async function fetchMembership() {
+      let membership = document.getElementById("membershipInput").value.trim();
+
+      if (!/^[0-9]{6}$/.test(membership)) {
+        showToast("⚠️ Membership must be 6 digits", "warning");
+        return;
+      }
+
+      try {
+        let response = await fetch(WEB_APP_URL + "?membership=" + membership);
+        let data = await response.json();
+
+        if (data.alreadyRegistered) {
+          showToast("⚠️ Already registered for next grade as Student", "warning");
+          return;
+        }
+
+        seminarData = data.seminars;
+        nextEligible = "Grade " + (data.highestGrade + 1);
+
+        // Past seminars
+        let pastDiv = "<h4>Past Seminars:</h4><ul>";
+        data.pastSeminars.forEach(s => {
+          pastDiv += `<li>${s.grade} - ${s.location} (${s.date})</li>`;
+        });
+        pastDiv += "</ul>";
+        document.getElementById("pastSeminars").innerHTML = pastDiv;
+
+        // Next seminar
+        if (seminarData[nextEligible]) {
+          let s = seminarData[nextEligible];
+          document.getElementById("nextSeminar").innerHTML =
+            `<h4>Next Eligible: ${nextEligible}</h4>
+             <p>${s.location} | ${s.startDate} to ${s.endDate}</p>`;
+        } else {
+          document.getElementById("nextSeminar").innerHTML =
+            "<h4>No upcoming seminar found for your next grade</h4>";
+        }
+
+        showToast("✅ Membership validated", "success");
+
+      } catch (err) {
+        showToast("❌ Error: " + err.message, "error");
+      }
+    }
+
+    async function registerUser() {
+      let membership = document.getElementById("membershipInput").value.trim();
+      if (!membership) { showToast("⚠️ Enter membership first", "warning"); return; }
+
+      let formData = {
+        membership: membership,
+        participantType: document.getElementById("participantType").value,
+        mode: document.getElementById("mode").value,
+        name: document.getElementById("name").value.trim(),
+        mobile: document.getElementById("mobile").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        address: document.getElementById("address").value.trim(),
+        pincode: document.getElementById("pincode").value.trim(),
+        feesPaid: document.getElementById("feesPaid").value,
+        grade: nextEligible,
+        location: seminarData[nextEligible]?.location || "",
+        seminarDate: seminarData[nextEligible]?.startDate || ""
+      };
+
+      try {
+        let response = await fetch(WEB_APP_URL, {
+          method: "POST",
+          body: JSON.stringify(formData)
+        });
+        let result = await response.text();
+        if (result.startsWith("✅")) {
+          showToast(result, "success");
+          document.getElementById("regForm").reset();
+        } else {
+          showToast(result, "error");
+        }
+      } catch (err) {
+        showToast("❌ Error: " + err.message, "error");
+      }
+    }
+  </script>
+</body>
+</html>
