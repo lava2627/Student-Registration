@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WE Trust Admin Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+    h2 { color: #333; }
+    table { border-collapse: collapse; width: 100%; margin-top: 15px; background: #fff; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #eee; }
+    input, select, button { padding: 6px; margin: 3px; }
+    button { border: none; border-radius: 4px; cursor: pointer; }
+    .toast { position: fixed; top: 20px; right: 20px; padding: 10px; border-radius: 5px; display: none; }
+    .success { background: #28a745; color: white; }
+    .error { background: #dc3545; color: white; }
+    .warning { background: #ffc107; color: black; }
+  </style>
+</head>
+<body>
+
+  <h2>WE Trust Admin Dashboard</h2>
+
+  <div id="loginSection">
+    <h3>Admin Login</h3>
+    <input type="text" id="adminUser" placeholder="Username"><br>
+    <input type="password" id="adminKey" placeholder="Password"><br>
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+    <button onclick="logout()">Logout</button>
+    <h3>Registrations</h3>
+
+    <!-- Filters -->
+    <input type="text" id="searchName" placeholder="Search name/membership" onkeyup="applyFilters()">
+    <select id="filterGrade" onchange="applyFilters()"><option value="">All Grades</option></select>
+    <select id="filterMode" onchange="applyFilters()"><option value="">All Modes</option></select>
+    <select id="filterFees" onchange="applyFilters()"><option value="">Fees Paid?</option></select>
+    <label><input type="checkbox" id="showUpcomingOnly" onchange="applyFilters()"> Upcoming Only</label>
+    <label>From: <input type="date" id="filterFrom" onchange="applyFilters()"></label>
+    <label>To: <input type="date" id="filterTo" onchange="applyFilters()"></label>
+
+    <!-- Exports -->
+    <button onclick="exportFiltered()">Export Filtered (CSV)</button>
+    <button onclick="exportFilteredExcel()">Export Filtered (Excel)</button>
+    <button onclick="exportRegistrations()">Export All (CSV)</button>
+    <button onclick="exportAllExcel()">Export All (Excel)</button>
+    <button onclick="exportLogs()">Export Logs (CSV)</button>
+    <button onclick="exportLogsExcel()">Export Logs (Excel)</button>
+
+    <div id="dataTable"></div>
+
+    <hr>
+    <!-- Members Management -->
+    <button onclick="loadMembers()">Manage Members</button>
+    <div id="membersSection" style="display:none; margin-top:20px;">
+      <h3>Members Management</h3>
+      <h4>Add New Member</h4>
+      <input type="text" id="newMemberNo" placeholder="Membership Number">
+      <input type="text" id="newMemberName" placeholder="Name">
+      <select id="newMemberStatus">
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+      <button onclick="addMember()">Add Member</button>
+      <hr>
+      <div id="membersTable"></div>
+    </div>
+
+    <!-- Deleted Members -->
+    <button onclick="loadDeletedMembers()">Show Deleted Members</button>
+    <div id="deletedMembersSection" style="display:none; margin-top:20px;">
+      <h3>Deleted Members (Recycle Bin)</h3>
+      <div id="deletedMembersTable"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- SheetJS for Excel Export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby3UOHbVYBTrfZYGA14kX3jE-e1sXG8BpejF_afGY8eTfOSEc6dQuXczJkN7Ct5eTYxsQ/exec"; // Replace with your Web App URL
+    let adminUser = "", adminKey = "", allData = [], sessionTimer, warningTimer;
+
+    function showToast(msg, type="success") {
+      let toast = document.getElementById("toast");
+      toast.className = "toast " + type;
+      toast.textContent = msg;
+      toast.style.display = "block";
+      setTimeout(()=> toast.style.display="none", 4000);
+    }
+
+    async function login() {
+      adminUser = document.getElementById("adminUser").value.trim();
+      adminKey = document.getElementById("adminKey").value.trim();
+      const resp = await fetch(WEB_APP_URL+"?username="+adminUser+"&adminKey="+adminKey+"&action=login");
+      const text = await resp.text();
+      if (text.startsWith("✅")) {
+        document.getElementById("loginSection").style.display="none";
+        document.getElementById("dashboard").style.display="block";
+        showToast(text,"success");
+        startSessionTimer();
+        loadRegistrations();
+      } else {
+        showToast("❌ Login failed","error");
+      }
+    }
+
+    async function logout() {
+      await fetch(WEB_APP_URL+"?username="+adminUser+"&adminKey="+adminKey+"&action=logout");
+      location.reload();
+    }
+
+    function startSessionTimer() {
+      clearTimeout(sessionTimer); clearTimeout(warningTimer);
+      warningTimer = setTimeout(()=> showToast("⚠️ Auto logout in 1 minute","warning"), 4*60*1000);
+      sessionTimer = setTimeout(()=> logout(), 5*60*1000);
+    }
+
+    // Registrations table (fetch, filter, edit, delete, export)
+    async function loadRegistrations() { /* fetch CSV & render table ... */ }
+    function applyFilters() { /* filter logic ... */ }
+    async function exportFiltered() { /* CSV export ... */ }
+    async function exportFilteredExcel() { /* Excel export ... */ }
+    async function exportRegistrations() { /* All CSV ... */ }
+    async function exportAllExcel() { /* All Excel ... */ }
+    async function exportLogs() { /* Logs CSV ... */ }
+    async function exportLogsExcel() { /* Logs Excel ... */ }
+
+    // Members management
+    async function loadMembers() { /* fetch & render table ... */ }
+    async function addMember() { /* add new member ... */ }
+    async function updateMember(m) { /* save edits ... */ }
+    async function deleteMember(m) { /* soft delete ... */ }
+    async function loadDeletedMembers() { /* show recycle bin ... */ }
+    async function restoreMember(m) { /* restore deleted member ... */ }
+  </script>
+</body>
+</html>
