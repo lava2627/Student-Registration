@@ -227,6 +227,11 @@
       transform: translateY(-2px);
     }
 
+    .btn-success {
+      background: linear-gradient(135deg, #51cf66, #40c057);
+      color: white;
+    }
+
     .btn:disabled {
       background: rgba(255, 255, 255, 0.1);
       color: rgba(255, 255, 255, 0.5);
@@ -292,6 +297,31 @@
       border: 1px solid rgba(40, 167, 69, 0.3);
     }
 
+    .status-indicator {
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 10px;
+      border-left: 4px solid;
+    }
+
+    .status-online {
+      background: rgba(40, 167, 69, 0.1);
+      border-color: #28a745;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .status-offline {
+      background: rgba(220, 53, 69, 0.1);
+      border-color: #dc3545;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .status-demo {
+      background: rgba(255, 193, 7, 0.1);
+      border-color: #ffc107;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
     .toast {
       position: fixed;
       top: 20px;
@@ -334,6 +364,11 @@
       color: #000;
     }
 
+    .info {
+      background: linear-gradient(135deg, rgba(23, 162, 184, 0.9), rgba(23, 162, 184, 0.7));
+      border: 1px solid rgba(23, 162, 184, 0.3);
+    }
+
     .back-button {
       position: fixed;
       top: 20px;
@@ -347,6 +382,7 @@
       font-weight: 500;
       backdrop-filter: blur(20px);
       transition: all 0.3s ease;
+      z-index: 100;
     }
 
     .back-button:hover {
@@ -361,6 +397,25 @@
     .loading {
       opacity: 0.7;
       pointer-events: none;
+    }
+
+    .debug-section {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 10px;
+      margin: 15px 0;
+      font-family: monospace;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .connection-test {
+      margin: 20px 0;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
     }
 
     @media (max-width: 768px) {
@@ -392,6 +447,10 @@
         display: inline-block;
         margin-bottom: 20px;
       }
+
+      .info-cards {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -406,6 +465,35 @@
         <p class="subtitle">Register for upcoming seminars</p>
       </div>
 
+      <!-- Backend Status -->
+      <div id="backendStatus" class="status-indicator status-offline">
+        <strong>🔴 Backend Status:</strong> <span id="statusText">Checking connection...</span>
+      </div>
+
+      <!-- Debug Information -->
+      <div id="debugInfo" class="debug-section hidden">
+        <strong>Debug Log:</strong><br>
+        <div id="debugContent">System ready...</div>
+      </div>
+
+      <!-- Connection Test -->
+      <div class="connection-test">
+        <button class="btn btn-secondary" onclick="testConnection()" style="margin-bottom: 15px;">
+          <span id="testBtnText">Test Backend Connection</span>
+        </button>
+        <button class="btn btn-secondary" onclick="switchMode()" style="margin-bottom: 15px;">
+          <span id="modeBtnText">Switch to Demo Mode</span>
+        </button>
+        <label style="color: rgba(255, 255, 255, 0.8);">
+          <input type="checkbox" id="showDebug" onchange="toggleDebug()"> Show Debug Information
+        </label>
+      </div>
+
+      <!-- Mode Indicator -->
+      <div id="modeIndicator" class="status-demo hidden">
+        <strong>Mode:</strong> <span id="currentMode">Backend</span>
+      </div>
+
       <div class="form-section">
         <div class="section-title">
           <span class="section-icon">👤</span>
@@ -415,7 +503,7 @@
         <div class="membership-section">
           <div class="form-group">
             <label for="membershipInput">Membership Number</label>
-            <input type="text" id="membershipInput" placeholder="Enter your 6-digit membership number" required>
+            <input type="text" id="membershipInput" placeholder="Enter your 6-digit membership number" maxlength="6">
           </div>
           <button type="button" class="btn btn-secondary" onclick="fetchMembership()">
             <span id="fetchBtnText">Fetch Details</span>
@@ -426,11 +514,11 @@
           <div class="info-cards">
             <div class="info-card">
               <h4>📚 Past Seminars</h4>
-              <div id="pastSeminars"></div>
+              <div id="pastSeminars">No past seminars found</div>
             </div>
             <div class="info-card next-seminar">
               <h4>🎯 Next Eligible</h4>
-              <div id="nextSeminar"></div>
+              <div id="nextSeminar">No upcoming seminars</div>
             </div>
           </div>
         </div>
@@ -463,28 +551,28 @@
           <div class="form-row">
             <div class="form-group">
               <label for="name">Full Name</label>
-              <input type="text" id="name" placeholder="Enter your full name">
+              <input type="text" id="name" placeholder="Enter your full name" required>
             </div>
             <div class="form-group">
               <label for="mobile">Mobile Number</label>
-              <input type="text" id="mobile" placeholder="Enter your mobile number">
+              <input type="text" id="mobile" placeholder="Enter your 10-digit mobile number" maxlength="10">
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label for="email">Email Address</label>
-              <input type="email" id="email" placeholder="Enter your email address">
+              <input type="email" id="email" placeholder="Enter your email address" required>
             </div>
             <div class="form-group">
               <label for="pincode">Pincode</label>
-              <input type="text" id="pincode" placeholder="Enter your pincode">
+              <input type="text" id="pincode" placeholder="Enter your 6-digit pincode" maxlength="6">
             </div>
           </div>
 
           <div class="form-group">
             <label for="address">Complete Address</label>
-            <textarea id="address" placeholder="Enter your complete address"></textarea>
+            <textarea id="address" placeholder="Enter your complete address" required></textarea>
           </div>
 
           <div class="form-row">
@@ -508,167 +596,306 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby3UOHbVYBTrfZYGA14kX3jE-e1sXG8BpejF_afGY8eTfOSEc6dQuXczJkN7Ct5eTYxsQ/exec";
-    let seminarData = {};
-    let nextEligible = null;
+    // Configuration
+    const CONFIG = {
+      WEB_APP_URL: "https://script.google.com/macros/s/AKfycby3UOHbVYBTrfZYGA14kX3jE-e1sXG8BpejF_afGY8eTfOSEc6dQuXczJkN7Ct5eTYxsQ/exec",
+      REQUEST_TIMEOUT: 10000,
+      DEMO_MEMBERSHIPS: ["123456", "789012", "345678"]
+    };
 
-    function showToast(msg, type="success") {
-      let toast = document.getElementById("toast");
+    // Global State
+    let state = {
+      currentMode: 'backend', // 'backend' or 'demo'
+      backendStatus: 'unknown',
+      seminarData: {},
+      nextEligible: null,
+      isDebugMode: false
+    };
+
+    // Demo Data
+    const DEMO_DATA = {
+      "123456": {
+        alreadyRegistered: false,
+        highestGrade: 1,
+        pastSeminars: [
+          { grade: "Grade 1", location: "Mumbai", date: "2024-01-15" }
+        ],
+        seminars: {
+          "Grade 2": {
+            location: "Delhi",
+            startDate: "2024-03-15",
+            endDate: "2024-03-17"
+          }
+        }
+      },
+      "789012": {
+        alreadyRegistered: true,
+        highestGrade: 2,
+        pastSeminars: [
+          { grade: "Grade 1", location: "Mumbai", date: "2024-01-15" },
+          { grade: "Grade 2", location: "Delhi", date: "2024-02-20" }
+        ],
+        seminars: {}
+      },
+      "345678": {
+        alreadyRegistered: false,
+        highestGrade: 0,
+        pastSeminars: [],
+        seminars: {
+          "Grade 1": {
+            location: "Bangalore",
+            startDate: "2024-04-10",
+            endDate: "2024-04-12"
+          }
+        }
+      }
+    };
+
+    // Utility Functions
+    function showToast(msg, type = "success") {
+      const toast = document.getElementById("toast");
       toast.className = "toast " + type;
       toast.textContent = msg;
       toast.style.display = "block";
-      setTimeout(()=> toast.style.display="none", 4000);
+      setTimeout(() => toast.style.display = "none", 5000);
     }
 
-    async function fetchMembership() {
-      let membership = document.getElementById("membershipInput").value.trim();
-      let fetchBtn = document.querySelector('button[onclick="fetchMembership()"]');
-      let fetchBtnText = document.getElementById("fetchBtnText");
+    function debugLog(message, data = null) {
+      if (!state.isDebugMode) return;
+      
+      const timestamp = new Date().toLocaleTimeString();
+      const debugContent = document.getElementById("debugContent");
+      const logEntry = `[${timestamp}] ${message}${data ? ': ' + JSON.stringify(data, null, 2) : ''}`;
+      
+      console.log(logEntry);
+      
+      if (debugContent) {
+        debugContent.innerHTML += logEntry + '<br>';
+        debugContent.scrollTop = debugContent.scrollHeight;
+      }
+    }
 
+    function toggleDebug() {
+      const debugInfo = document.getElementById("debugInfo");
+      const showDebug = document.getElementById("showDebug").checked;
+      
+      state.isDebugMode = showDebug;
+      
+      if (showDebug) {
+        debugInfo.classList.remove("hidden");
+        debugLog("Debug mode enabled");
+      } else {
+        debugInfo.classList.add("hidden");
+      }
+    }
+
+    function updateBackendStatus(isOnline, message) {
+      const statusDiv = document.getElementById("backendStatus");
+      const statusText = document.getElementById("statusText");
+      
+      state.backendStatus = isOnline ? 'online' : 'offline';
+      
+      statusDiv.className = `status-indicator ${isOnline ? 'status-online' : 'status-offline'}`;
+      statusText.textContent = message;
+      
+      debugLog(`Backend status: ${isOnline ? 'ONLINE' : 'OFFLINE'}`, { message });
+    }
+
+    function updateModeIndicator() {
+      const modeIndicator = document.getElementById("modeIndicator");
+      const currentModeText = document.getElementById("currentMode");
+      const modeBtnText = document.getElementById("modeBtnText");
+      
+      modeIndicator.classList.remove("hidden");
+      currentModeText.textContent = state.currentMode === 'backend' ? 'Backend Connection' : 'Demo Mode';
+      modeBtnText.textContent = state.currentMode === 'backend' ? 'Switch to Demo Mode' : 'Switch to Backend Mode';
+      
+      modeIndicator.className = `status-indicator ${state.currentMode === 'demo' ? 'status-demo' : 'status-online'}`;
+    }
+
+    // Backend Communication
+    async function makeRequest(url, options = {}) {
+      const defaultOptions = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      };
+
+      const config = { ...defaultOptions, ...options };
+      
+      debugLog(`Making ${config.method} request`, { url, options: config });
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT);
+        
+        const response = await fetch(url, {
+          ...config,
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        
+        debugLog(`Response received`, { 
+          status: response.status, 
+          statusText: response.statusText,
+          ok: response.ok 
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // Try to parse response
+        let responseData;
+        const contentType = response.headers.get('content-type');
+        
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            responseData = await response.json();
+          } else {
+            const text = await response.text();
+            // Try to parse as JSON if it looks like JSON
+            if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+              responseData = JSON.parse(text);
+            } else {
+              responseData = text;
+            }
+          }
+        } catch (parseError) {
+          responseData = await response.text();
+        }
+        
+        debugLog(`Response data parsed`, { data: responseData });
+        
+        return { success: true, data: responseData, response };
+        
+      } catch (error) {
+        debugLog(`Request failed`, { error: error.message });
+        
+        if (error.name === 'AbortError') {
+          throw new Error('Request timeout - please check your internet connection');
+        }
+        
+        throw error;
+      }
+    }
+
+    // Connection Testing
+    async function testConnection() {
+      const testBtn = document.querySelector('button[onclick="testConnection()"]');
+      const testBtnText = document.getElementById("testBtnText");
+      
+      testBtn.disabled = true;
+      testBtnText.textContent = "Testing...";
+      
+      debugLog("Testing backend connection");
+      
+      try {
+        const testUrl = `${CONFIG.WEB_APP_URL}?action=ping&timestamp=${Date.now()}`;
+        const result = await makeRequest(testUrl);
+        
+        updateBackendStatus(true, "✅ Backend connected successfully");
+        showToast("✅ Backend connection successful", "success");
+        
+        state.currentMode = 'backend';
+        updateModeIndicator();
+        
+        return true;
+        
+      } catch (error) {
+        updateBackendStatus(false, `❌ Connection failed: ${error.message}`);
+        showToast(`❌ Backend connection failed: ${error.message}`, "error");
+        
+        // Auto-switch to demo mode
+        if (state.currentMode === 'backend') {
+          state.currentMode = 'demo';
+          updateModeIndicator();
+          showToast("ℹ️ Switched to demo mode", "info");
+        }
+        
+        return false;
+        
+      } finally {
+        testBtn.disabled = false;
+        testBtnText.textContent = "Test Backend Connection";
+      }
+    }
+
+    // Mode Switching
+    function switchMode() {
+      state.currentMode = state.currentMode === 'backend' ? 'demo' : 'backend';
+      updateModeIndicator();
+      
+      // Clear any existing data
+      document.getElementById("membershipInfo").classList.add("hidden");
+      document.getElementById("regForm").classList.add("hidden");
+      document.getElementById("membershipInput").value = "";
+      
+      const modeText = state.currentMode === 'demo' ? 'Demo Mode' : 'Backend Mode';
+      showToast(`Switched to ${modeText}`, "info");
+      debugLog(`Mode switched to: ${state.currentMode}`);
+    }
+
+    // Membership Functions
+    async function fetchMembership() {
+      const membershipInput = document.getElementById("membershipInput");
+      const fetchBtn = document.querySelector('button[onclick="fetchMembership()"]');
+      const fetchBtnText = document.getElementById("fetchBtnText");
+      
+      let membership = membershipInput.value.trim();
+      
+      // Validation
       if (!/^[0-9]{6}$/.test(membership)) {
-        showToast("⚠️ Membership must be 6 digits", "warning");
+        showToast("⚠️ Membership number must be exactly 6 digits", "warning");
+        membershipInput.focus();
         return;
       }
 
       // Loading state
       fetchBtn.disabled = true;
       fetchBtnText.textContent = "Fetching...";
-      fetchBtn.classList.add("loading");
-
+      
       try {
-        let response = await fetch(WEB_APP_URL + "?membership=" + membership);
-        let data = await response.json();
+        let data;
+        
+        if (state.currentMode === 'demo') {
+          // Demo mode
+          debugLog("Fetching membership data (Demo mode)", { membership });
+          
+          // Simulate network delay
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          data = DEMO_DATA[membership];
+          if (!data) {
+            throw new Error("Membership not found in demo database. Try: 123456, 789012, or 345678");
+          }
+          
+        } else {
+          // Backend mode
+          debugLog("Fetching membership data (Backend mode)", { membership });
+          
+          const url = `${CONFIG.WEB_APP_URL}?membership=${membership}`;
+          const result = await makeRequest(url);
+          data = result.data;
+        }
 
+        debugLog("Membership data received", { data });
+
+        // Check if already registered
         if (data.alreadyRegistered) {
           showToast("⚠️ Already registered for next grade as Student", "warning");
           return;
         }
 
-        seminarData = data.seminars;
-        nextEligible = "Grade " + (data.highestGrade + 1);
+        // Process seminar data
+        state.seminarData = data.seminars || {};
+        state.nextEligible = "Grade " + (data.highestGrade + 1);
 
         // Show membership info
-        document.getElementById("membershipInfo").classList.remove("hidden");
-        document.getElementById("regForm").classList.remove("hidden");
-
-        // Past seminars
-        let pastDiv = "<ul>";
-        data.pastSeminars.forEach(s => {
-          pastDiv += `<li><span>${s.grade}</span><span>${s.location} (${s.date})</span></li>`;
-        });
-        pastDiv += "</ul>";
-        document.getElementById("pastSeminars").innerHTML = pastDiv;
-
-        // Next seminar
-        if (seminarData[nextEligible]) {
-          let s = seminarData[nextEligible];
-          document.getElementById("nextSeminar").innerHTML =
-            `<div style="color: rgba(255,255,255,0.95); font-weight: 600; margin-bottom: 10px;">${nextEligible}</div>
-             <div style="color: rgba(255,255,255,0.8);">${s.location}</div>
-             <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">${s.startDate} to ${s.endDate}</div>`;
-        } else {
-          document.getElementById("nextSeminar").innerHTML =
-            "<div style='color: rgba(255,255,255,0.7);'>No upcoming seminar found for your next grade</div>";
-        }
-
-        showToast("✅ Membership validated successfully", "success");
-
-      } catch (err) {
-        showToast("❌ Error: " + err.message, "error");
-      } finally {
-        // Reset button
-        fetchBtn.disabled = false;
-        fetchBtnText.textContent = "Fetch Details";
-        fetchBtn.classList.remove("loading");
-      }
-    }
-
-    async function registerUser() {
-      let membership = document.getElementById("membershipInput").value.trim();
-      if (!membership) { 
-        showToast("⚠️ Please enter membership number first", "warning"); 
-        return; 
-      }
-
-      let submitBtn = document.querySelector('button[onclick="registerUser()"]');
-      let submitBtnText = document.getElementById("submitBtnText");
-
-      // Validation
-      const requiredFields = ['name', 'mobile', 'email', 'address', 'pincode'];
-      for (let field of requiredFields) {
-        if (!document.getElementById(field).value.trim()) {
-          showToast(`⚠️ Please fill in ${field}`, "warning");
-          return;
-        }
-      }
-
-      let formData = {
-        membership: membership,
-        participantType: document.getElementById("participantType").value,
-        mode: document.getElementById("mode").value,
-        name: document.getElementById("name").value.trim(),
-        mobile: document.getElementById("mobile").value.trim(),
-        email: document.getElementById("email").value.trim(),
-        address: document.getElementById("address").value.trim(),
-        pincode: document.getElementById("pincode").value.trim(),
-        feesPaid: document.getElementById("feesPaid").value,
-        grade: nextEligible,
-        location: seminarData[nextEligible]?.location || "",
-        seminarDate: seminarData[nextEligible]?.startDate || ""
-      };
-
-      // Loading state
-      submitBtn.disabled = true;
-      submitBtnText.textContent = "Submitting...";
-      submitBtn.classList.add("loading");
-
-      try {
-        let response = await fetch(WEB_APP_URL, {
-          method: "POST",
-          body: JSON.stringify(formData)
-        });
-        let result = await response.text();
+        displayMembershipInfo(data);
         
-        if (result.startsWith("✅")) {
-          showToast(result, "success");
-          document.getElementById("regForm").reset();
-          document.getElementById("membershipInput").value = "";
-          document.getElementById("membershipInfo").classList.add("hidden");
-          document.getElementById("regForm").classList.add("hidden");
-        } else {
-          showToast(result, "error");
-        }
-      } catch (err) {
-        showToast("❌ Error: " + err.message, "error");
-      } finally {
-        // Reset button
-        submitBtn.disabled = false;
-        submitBtnText.textContent = "Submit Registration";
-        submitBtn.classList.remove("loading");
-      }
-    }
-
-    // Auto-format membership input
-    document.getElementById("membershipInput").addEventListener("input", function(e) {
-      e.target.value = e.target.value.replace(/\D/g, '').substring(0, 6);
-    });
-
-    // Auto-format mobile input
-    document.getElementById("mobile").addEventListener("input", function(e) {
-      e.target.value = e.target.value.replace(/\D/g, '').substring(0, 10);
-    });
-
-    // Auto-format pincode input
-    document.getElementById("pincode").addEventListener("input", function(e) {
-      e.target.value = e.target.value.replace(/\D/g, '').substring(0, 6);
-    });
-
-    // Enter key handling
-    document.getElementById("membershipInput").addEventListener("keypress", function(e) {
-      if (e.key === "Enter") {
-        fetchMembership();
-      }
-    });
-  </script>
-</body>
-</html>
+        // Show registration form
+        document.getElementById("membership
