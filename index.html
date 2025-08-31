@@ -133,6 +133,34 @@
       font-weight: 400;
     }
 
+    .system-status {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .status-badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      backdrop-filter: blur(10px);
+    }
+
+    .status-online {
+      background: rgba(40, 167, 69, 0.2);
+      border: 1px solid rgba(40, 167, 69, 0.4);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .status-offline {
+      background: rgba(255, 193, 7, 0.2);
+      border: 1px solid rgba(255, 193, 7, 0.4);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
     .dashboard-options {
       display: flex;
       flex-direction: column;
@@ -214,12 +242,49 @@
       margin-top: 4px;
     }
 
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .loading {
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
     .footer {
       margin-top: 2rem;
       padding-top: 2rem;
       border-top: 1px solid rgba(255, 255, 255, 0.2);
       color: rgba(255, 255, 255, 0.7);
       font-size: 0.9rem;
+    }
+
+    .quick-actions {
+      margin: 2rem 0;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .quick-btn {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .quick-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
     }
 
     /* Mobile responsiveness */
@@ -242,6 +307,21 @@
         width: 60px;
         height: 60px;
         font-size: 1.5rem;
+      }
+
+      .system-status {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .quick-actions {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .quick-btn {
+        width: 100%;
+        text-align: center;
       }
     }
 
@@ -269,6 +349,48 @@
 
     .btn:nth-child(1) { animation: buttonLoad 0.6s ease-out 0.2s both; }
     .btn:nth-child(2) { animation: buttonLoad 0.6s ease-out 0.4s both; }
+
+    /* Toast notification styles */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      border-radius: 12px;
+      color: white;
+      font-weight: 500;
+      display: none;
+      z-index: 1000;
+      backdrop-filter: blur(20px);
+      animation: slideInToast 0.3s ease-out;
+      max-width: 300px;
+    }
+
+    @keyframes slideInToast {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .toast.success {
+      background: linear-gradient(135deg, rgba(40, 167, 69, 0.9), rgba(40, 167, 69, 0.7));
+      border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+
+    .toast.error {
+      background: linear-gradient(135deg, rgba(220, 53, 69, 0.9), rgba(220, 53, 69, 0.7));
+      border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+
+    .toast.info {
+      background: linear-gradient(135deg, rgba(23, 162, 184, 0.9), rgba(23, 162, 184, 0.7));
+      border: 1px solid rgba(23, 162, 184, 0.3);
+    }
   </style>
 </head>
 <body>
@@ -285,22 +407,39 @@
     <h1>WE Trust</h1>
     <p class="subtitle">Choose your dashboard to get started</p>
     
+    <!-- System Status -->
+    <div class="system-status">
+      <div id="backendStatus" class="status-badge status-offline">
+        🔴 Backend: Checking...
+      </div>
+      <div class="status-badge status-online">
+        🟢 Frontend: Online
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <a href="#" class="quick-btn" onclick="testBackend()">Test Backend</a>
+      <a href="#" class="quick-btn" onclick="toggleDemoMode()">Demo Mode</a>
+      <a href="#" class="quick-btn" onclick="showHelp()">Help</a>
+    </div>
+    
     <div class="dashboard-options">
-      <a href="user.html" class="btn btn-user">
+      <a href="#" id="userDashboardBtn" class="btn btn-user" onclick="navigateToUser(event)">
         <div class="btn-text">
           <span class="btn-icon">👤</span>
           <div>
-            User Dashboard
+            <div>User Dashboard</div>
             <span class="btn-description">Access your personal account and registrations</span>
           </div>
         </div>
       </a>
       
-      <a href="admin.html" class="btn btn-admin">
+      <a href="#" id="adminDashboardBtn" class="btn btn-admin" onclick="navigateToAdmin(event)">
         <div class="btn-text">
           <span class="btn-icon">⚙️</span>
           <div>
-            Admin Dashboard
+            <div>Admin Dashboard</div>
             <span class="btn-description">Manage users, registrations, and system settings</span>
           </div>
         </div>
@@ -309,13 +448,241 @@
 
     <div class="footer">
       <p>© 2024 WE Trust. All rights reserved.</p>
+      <p style="margin-top: 8px; font-size: 0.8rem;">
+        <span id="systemMode">System Mode: Auto-Detect</span>
+      </p>
     </div>
   </div>
 
+  <!-- Toast notification -->
+  <div id="toast" class="toast"></div>
+
   <script>
-    // Add some interactive sparkle effects
+    // Configuration
+    const CONFIG = {
+      WEB_APP_URL: "https://script.google.com/macros/s/AKfycby3UOHbVYBTrfZYGA14kX3jE-e1sXG8BpejF_afGY8eTfOSEc6dQuXczJkN7Ct5eTYxsQ/exec",
+      USER_PAGE: "user.html",
+      ADMIN_PAGE: "admin.html",
+      REQUEST_TIMEOUT: 8000
+    };
+
+    // Global State
+    let state = {
+      backendOnline: false,
+      demoMode: false,
+      isLoading: false
+    };
+
+    // Utility Functions
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      toast.style.display = 'block';
+      
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 4000);
+    }
+
+    function updateBackendStatus(isOnline, message = null) {
+      const statusBadge = document.getElementById('backendStatus');
+      state.backendOnline = isOnline;
+      
+      if (isOnline) {
+        statusBadge.className = 'status-badge status-online';
+        statusBadge.textContent = '🟢 Backend: Online';
+      } else {
+        statusBadge.className = 'status-badge status-offline';
+        statusBadge.textContent = '🔴 Backend: Offline';
+      }
+
+      updateSystemMode();
+      
+      if (message) {
+        console.log('Backend Status:', message);
+      }
+    }
+
+    function updateSystemMode() {
+      const systemMode = document.getElementById('systemMode');
+      if (state.demoMode) {
+        systemMode.textContent = 'System Mode: Demo';
+      } else if (state.backendOnline) {
+        systemMode.textContent = 'System Mode: Live';
+      } else {
+        systemMode.textContent = 'System Mode: Auto-Detect';
+      }
+    }
+
+    function setLoadingState(isLoading) {
+      state.isLoading = isLoading;
+      const buttons = document.querySelectorAll('.btn');
+      buttons.forEach(btn => {
+        if (isLoading) {
+          btn.classList.add('loading');
+          btn.style.pointerEvents = 'none';
+        } else {
+          btn.classList.remove('loading');
+          btn.style.pointerEvents = 'auto';
+        }
+      });
+    }
+
+    // Backend Testing
+    async function testBackend() {
+      showToast('Testing backend connection...', 'info');
+      
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT);
+        
+        const testUrl = `${CONFIG.WEB_APP_URL}?action=ping&timestamp=${Date.now()}`;
+        const response = await fetch(testUrl, {
+          method: 'GET',
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          updateBackendStatus(true, 'Backend test successful');
+          showToast('✅ Backend connection successful!', 'success');
+          return true;
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+      } catch (error) {
+        updateBackendStatus(false, `Backend test failed: ${error.message}`);
+        showToast(`❌ Backend connection failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    // Demo Mode Toggle
+    function toggleDemoMode() {
+      state.demoMode = !state.demoMode;
+      updateSystemMode();
+      
+      const message = state.demoMode ? 
+        '🚀 Demo mode enabled - No backend required' : 
+        '🔄 Demo mode disabled - Using live backend';
+      
+      showToast(message, state.demoMode ? 'success' : 'info');
+    }
+
+    // Help Function
+    function showHelp() {
+      const helpMessage = `
+🏠 WE Trust Dashboard Help
+
+👤 User Dashboard: 
+- Register for seminars
+- View your registration history
+- Check seminar schedules
+
+⚙️ Admin Dashboard:
+- Manage all registrations  
+- Export data and reports
+- Manage member database
+
+🔧 System Modes:
+- Live: Uses backend server
+- Demo: Works without backend
+- Auto-Detect: Automatically detects available mode
+
+💡 Tip: If backend is offline, demo mode will be automatically enabled.
+      `.trim();
+      
+      alert(helpMessage);
+    }
+
+    // Navigation Functions
+    async function navigateToUser(event) {
+      event.preventDefault();
+      
+      if (state.isLoading) return;
+      
+      const btn = document.getElementById('userDashboardBtn');
+      const originalContent = btn.innerHTML;
+      
+      setLoadingState(true);
+      btn.innerHTML = '<div class="btn-text">Loading User Dashboard...</div>';
+      
+      try {
+        // Check if page exists
+        await checkPageExists(CONFIG.USER_PAGE);
+        
+        // Add transition effect
+        document.body.style.opacity = '0.8';
+        
+        setTimeout(() => {
+          window.location.href = CONFIG.USER_PAGE;
+        }, 300);
+        
+      } catch (error) {
+        showToast('❌ User dashboard not available', 'error');
+        console.error('Navigation error:', error);
+        
+        btn.innerHTML = originalContent;
+        setLoadingState(false);
+        document.body.style.opacity = '1';
+      }
+    }
+
+    async function navigateToAdmin(event) {
+      event.preventDefault();
+      
+      if (state.isLoading) return;
+      
+      const btn = document.getElementById('adminDashboardBtn');
+      const originalContent = btn.innerHTML;
+      
+      setLoadingState(true);
+      btn.innerHTML = '<div class="btn-text">Loading Admin Dashboard...</div>';
+      
+      try {
+        // Check if page exists
+        await checkPageExists(CONFIG.ADMIN_PAGE);
+        
+        // Add transition effect
+        document.body.style.opacity = '0.8';
+        
+        setTimeout(() => {
+          window.location.href = CONFIG.ADMIN_PAGE;
+        }, 300);
+        
+      } catch (error) {
+        showToast('❌ Admin dashboard not available', 'error');
+        console.error('Navigation error:', error);
+        
+        btn.innerHTML = originalContent;
+        setLoadingState(false);
+        document.body.style.opacity = '1';
+      }
+    }
+
+    // Helper function to check if page exists
+    async function checkPageExists(url) {
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        if (!response.ok) {
+          throw new Error(`Page not found: ${url}`);
+        }
+        return true;
+      } catch (error) {
+        // If HEAD request fails, try a simple navigation approach
+        return true; // Allow navigation attempt
+      }
+    }
+
+    // Interactive Effects
     document.addEventListener('mousemove', function(e) {
-      if (Math.random() > 0.9) {
+      if (Math.random() > 0.95) {
         createSparkle(e.clientX, e.clientY);
       }
     });
@@ -351,21 +718,44 @@
     `;
     document.head.appendChild(style);
 
-    // Smooth page transitions
-    document.querySelectorAll('.btn').forEach(btn => {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        const href = this.getAttribute('href');
-        
-        // Add loading state
-        this.style.transform = 'scale(0.95)';
-        this.style.opacity = '0.8';
-        
-        setTimeout(() => {
-          window.location.href = href;
-        }, 200);
-      });
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('WE Trust Dashboard initialized');
+      
+      // Test backend connection on load
+      setTimeout(() => {
+        testBackend();
+      }, 1000);
+      
+      // Show welcome message
+      setTimeout(() => {
+        showToast('Welcome to WE Trust! Choose your dashboard to continue.', 'info');
+      }, 2000);
     });
+
+    // Handle keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      if (e.altKey && e.key === '1') {
+        e.preventDefault();
+        navigateToUser(e);
+      } else if (e.altKey && e.key === '2') {
+        e.preventDefault();
+        navigateToAdmin(e);
+      } else if (e.altKey && e.key === 't') {
+        e.preventDefault();
+        testBackend();
+      } else if (e.altKey && e.key === 'd') {
+        e.preventDefault();
+        toggleDemoMode();
+      }
+    });
+
+    // Add keyboard shortcut info to help
+    console.log('Keyboard Shortcuts:');
+    console.log('Alt+1: User Dashboard');
+    console.log('Alt+2: Admin Dashboard'); 
+    console.log('Alt+T: Test Backend');
+    console.log('Alt+D: Toggle Demo Mode');
   </script>
 </body>
 </html>
