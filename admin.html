@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WE Trust Admin Dashboard</title>
+  <title>WE Trust - Admin Dashboard</title>
   <style>
     * {
       margin: 0;
@@ -49,10 +49,11 @@
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
       transition: all 0.3s ease;
       animation: fadeInUp 0.6s ease-out;
+      margin-bottom: 20px;
     }
 
     .glass-card:hover {
-      transform: translateY(-5px);
+      transform: translateY(-2px);
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
     }
 
@@ -65,22 +66,6 @@
         opacity: 1;
         transform: translateY(0);
       }
-    }
-
-    h1, h2, h3 {
-      color: rgba(255, 255, 255, 0.95);
-      font-weight: 700;
-      margin-bottom: 20px;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      text-align: center;
-      background: linear-gradient(135deg, #fff, #f0f0f0);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 40px;
     }
 
     .login-section {
@@ -189,6 +174,29 @@
       color: white;
     }
 
+    .btn:disabled {
+      background: rgba(255, 255, 255, 0.1) !important;
+      color: rgba(255, 255, 255, 0.5) !important;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    h1, h2, h3 {
+      color: rgba(255, 255, 255, 0.95);
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      text-align: center;
+      background: linear-gradient(135deg, #fff, #f0f0f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 40px;
+    }
+
     .filters-section {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -218,6 +226,8 @@
       border-radius: 15px;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.1);
+      max-height: 600px;
+      overflow-y: auto;
     }
 
     table {
@@ -237,6 +247,7 @@
       font-weight: 600;
       position: sticky;
       top: 0;
+      z-index: 10;
     }
 
     td {
@@ -259,6 +270,7 @@
       z-index: 1000;
       backdrop-filter: blur(20px);
       animation: slideIn 0.3s ease-out;
+      max-width: 400px;
     }
 
     @keyframes slideIn {
@@ -288,6 +300,11 @@
       color: #000;
     }
 
+    .info {
+      background: linear-gradient(135deg, rgba(23, 162, 184, 0.9), rgba(23, 162, 184, 0.7));
+      border: 1px solid rgba(23, 162, 184, 0.3);
+    }
+
     .header {
       display: flex;
       justify-content: space-between;
@@ -310,7 +327,7 @@
     }
 
     .hidden {
-      display: none;
+      display: none !important;
     }
 
     .management-section {
@@ -328,6 +345,47 @@
       padding: 20px;
       background: rgba(255, 255, 255, 0.05);
       border-radius: 15px;
+    }
+
+    .loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .status-indicator {
+      padding: 20px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border-left: 4px solid;
+    }
+
+    .status-online {
+      background: rgba(40, 167, 69, 0.1);
+      border-color: #28a745;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .status-offline {
+      background: rgba(220, 53, 69, 0.1);
+      border-color: #dc3545;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .debug-section {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 10px;
+      margin: 15px 0;
+      font-family: monospace;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .connection-test {
+      margin: 20px 0;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
     }
 
     @media (max-width: 768px) {
@@ -352,6 +410,10 @@
       h1 {
         font-size: 2rem;
       }
+
+      .data-table {
+        overflow-x: auto;
+      }
     }
   </style>
 </head>
@@ -360,22 +422,55 @@
     <div id="loginSection" class="login-section">
       <div class="glass-card">
         <h1>WE Trust Admin</h1>
+        
+        <!-- Connection Status -->
+        <div id="connectionStatus" class="status-indicator status-offline">
+          <strong>🔴 Backend Status:</strong> <span id="statusText">Checking connection...</span>
+        </div>
+
+        <!-- Debug Information -->
+        <div id="debugInfo" class="debug-section hidden">
+          <strong>Debug Info:</strong><br>
+          <div id="debugContent">Ready for connection test...</div>
+        </div>
+
+        <!-- Connection Test -->
+        <div class="connection-test">
+          <button class="btn btn-secondary" onclick="testConnection()" style="width: 100%; margin-bottom: 15px;">
+            <span id="testBtnText">Test Backend Connection</span>
+          </button>
+          <label>
+            <input type="checkbox" id="showDebug" onchange="toggleDebug()"> Show Debug Information
+          </label>
+        </div>
+
+        <!-- Login Form -->
         <div class="form-group">
           <label for="adminUser">Username</label>
-          <input type="text" id="adminUser" placeholder="Enter your username">
+          <input type="text" id="adminUser" placeholder="Enter admin username" value="admin">
         </div>
         <div class="form-group">
           <label for="adminKey">Password</label>
-          <input type="password" id="adminKey" placeholder="Enter your password">
+          <input type="password" id="adminKey" placeholder="Enter admin password" value="admin123">
         </div>
-        <button class="btn btn-primary" onclick="login()">Login</button>
+        
+        <!-- Multiple Login Options -->
+        <button class="btn btn-primary" onclick="login('backend')" style="margin-bottom: 10px;">
+          <span id="loginBtnText">Login with Backend</span>
+        </button>
+        <button class="btn btn-secondary" onclick="login('demo')" style="width: 100%;">
+          Demo Mode (No Backend)
+        </button>
       </div>
     </div>
 
     <div id="dashboard" class="hidden">
       <div class="glass-card">
         <div class="header">
-          <h1>Admin Dashboard</h1>
+          <div>
+            <h1>Admin Dashboard</h1>
+            <div id="loginMode" class="info" style="padding: 8px 15px; border-radius: 8px; font-size: 14px; display: inline-block;"></div>
+          </div>
           <button class="btn btn-danger" onclick="logout()">Logout</button>
         </div>
 
@@ -388,16 +483,23 @@
           <div class="form-group">
             <select id="filterGrade" onchange="applyFilters()">
               <option value="">All Grades</option>
+              <option value="Grade A">Grade A</option>
+              <option value="Grade B">Grade B</option>
+              <option value="Grade C">Grade C</option>
             </select>
           </div>
           <div class="form-group">
             <select id="filterMode" onchange="applyFilters()">
               <option value="">All Modes</option>
+              <option value="Direct">Direct</option>
+              <option value="Online">Online</option>
             </select>
           </div>
           <div class="form-group">
             <select id="filterFees" onchange="applyFilters()">
               <option value="">Fees Paid?</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
             </select>
           </div>
           <div class="checkbox-group">
@@ -415,12 +517,12 @@
         </div>
 
         <div class="export-buttons">
-          <button class="btn btn-secondary" onclick="exportFiltered()">Export Filtered CSV</button>
-          <button class="btn btn-secondary" onclick="exportFilteredExcel()">Export Filtered Excel</button>
-          <button class="btn btn-secondary" onclick="exportRegistrations()">Export All CSV</button>
-          <button class="btn btn-secondary" onclick="exportAllExcel()">Export All Excel</button>
-          <button class="btn btn-secondary" onclick="exportLogs()">Export Logs CSV</button>
-          <button class="btn btn-secondary" onclick="exportLogsExcel()">Export Logs Excel</button>
+          <button class="btn btn-secondary" onclick="exportData('filtered', 'csv')">Export Filtered CSV</button>
+          <button class="btn btn-secondary" onclick="exportData('filtered', 'excel')">Export Filtered Excel</button>
+          <button class="btn btn-secondary" onclick="exportData('all', 'csv')">Export All CSV</button>
+          <button class="btn btn-secondary" onclick="exportData('all', 'excel')">Export All Excel</button>
+          <button class="btn btn-secondary" onclick="exportData('logs', 'csv')">Export Logs CSV</button>
+          <button class="btn btn-secondary" onclick="exportData('logs', 'excel')">Export Logs Excel</button>
         </div>
 
         <div id="dataTable" class="data-table">
@@ -437,17 +539,19 @@
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="tableBody">
               <tr>
-                <td colspan="8" style="text-align: center; padding: 40px;">Loading data...</td>
+                <td colspan="8" style="text-align: center; padding: 40px;">
+                  <div id="loadingText">Loading data...</div>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
 
         <div class="management-section">
-          <button class="btn btn-secondary" onclick="loadMembers()">Manage Members</button>
-          <button class="btn btn-secondary" onclick="loadDeletedMembers()">Show Deleted Members</button>
+          <button class="btn btn-secondary" onclick="toggleSection('membersSection')">Manage Members</button>
+          <button class="btn btn-secondary" onclick="toggleSection('deletedMembersSection')">Show Deleted Members</button>
 
           <div id="membersSection" class="hidden">
             <h3>Members Management</h3>
@@ -483,189 +587,263 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- SheetJS for Excel Export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby3UOHbVYBTrfZYGA14kX3jE-e1sXG8BpejF_afGY8eTfOSEc6dQuXczJkN7Ct5eTYxsQ/exec"; // Replace with your Web App URL
-    let adminUser = "", adminKey = "", allData = [], sessionTimer, warningTimer;
+    // Configuration
+    const CONFIG = {
+      WEB_APP_URL: "https://script.google.com/macros/s/AKfycby3UOHbVYBTrfZYGA14kX3jE-e1sXG8BpejF_afGY8eTfOSEc6dQuXczJkN7Ct5eTYxsQ/exec",
+      DEMO_CREDENTIALS: { username: "admin", password: "admin123" },
+      SESSION_TIMEOUT: 5 * 60 * 1000, // 5 minutes
+      WARNING_TIMEOUT: 4 * 60 * 1000  // 4 minutes
+    };
 
-    function showToast(msg, type="success") {
-      let toast = document.getElementById("toast");
+    // Global State
+    let state = {
+      adminUser: "",
+      adminKey: "",
+      allData: [],
+      filteredData: [],
+      sessionTimer: null,
+      warningTimer: null,
+      isLoggedIn: false,
+      loginMode: 'offline',
+      backendStatus: 'unknown'
+    };
+
+    // Demo Data
+    const DEMO_DATA = [
+      { id: 1, name: "John Doe", membership: "M001", grade: "Grade A", mode: "Online", fees: "Paid", date: "2024-01-15" },
+      { id: 2, name: "Jane Smith", membership: "M002", grade: "Grade B", mode: "Direct", fees: "Pending", date: "2024-01-16" },
+      { id: 3, name: "Bob Johnson", membership: "M003", grade: "Grade A", mode: "Online", fees: "Paid", date: "2024-01-17" },
+      { id: 4, name: "Alice Brown", membership: "M004", grade: "Grade C", mode: "Direct", fees: "Paid", date: "2024-01-18" }
+    ];
+
+    const DEMO_MEMBERS = [
+      { memberNo: "M001", name: "John Doe", status: "Active" },
+      { memberNo: "M002", name: "Jane Smith", status: "Active" },
+      { memberNo: "M003", name: "Bob Johnson", status: "Inactive" }
+    ];
+
+    // Utility Functions
+    function showToast(msg, type = "success") {
+      const toast = document.getElementById("toast");
       toast.className = "toast " + type;
       toast.textContent = msg;
       toast.style.display = "block";
-      setTimeout(()=> {
-        toast.style.display="none";
-      }, 4000);
+      setTimeout(() => toast.style.display = "none", 4000);
     }
 
-    async function login() {
-      const loginBtn = event.target;
-      loginBtn.textContent = "Logging in...";
-      loginBtn.disabled = true;
+    function debugLog(message, data = null) {
+      const timestamp = new Date().toLocaleTimeString();
+      const debugContent = document.getElementById("debugContent");
+      const logEntry = `[${timestamp}] ${message}${data ? ': ' + JSON.stringify(data, null, 2) : ''}`;
+      
+      console.log(logEntry);
+      
+      if (debugContent) {
+        debugContent.innerHTML += logEntry + '<br>';
+        debugContent.scrollTop = debugContent.scrollHeight;
+      }
+    }
+
+    function toggleDebug() {
+      const debugInfo = document.getElementById("debugInfo");
+      const showDebug = document.getElementById("showDebug").checked;
+      
+      if (showDebug) {
+        debugInfo.classList.remove("hidden");
+        debugLog("Debug mode enabled");
+      } else {
+        debugInfo.classList.add("hidden");
+      }
+    }
+
+    function updateConnectionStatus(isOnline, message) {
+      const statusDiv = document.getElementById("connectionStatus");
+      const statusText = document.getElementById("statusText");
+      
+      state.backendStatus = isOnline ? 'online' : 'offline';
+      
+      statusDiv.className = `status-indicator ${isOnline ? 'status-online' : 'status-offline'}`;
+      statusText.textContent = message;
+      
+      debugLog(`Connection status: ${isOnline ? 'ONLINE' : 'OFFLINE'}`, { message });
+    }
+
+    // Backend Communication
+    async function makeRequest(url, options = {}) {
+      const defaultOptions = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        timeout: 10000
+      };
+
+      const config = { ...defaultOptions, ...options };
+      
+      debugLog(`Making ${config.method} request to backend`, { url, options: config });
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), config.timeout);
+        
+        const response = await fetch(url, {
+          ...config,
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        
+        debugLog(`Response received`, { 
+          status: response.status, 
+          statusText: response.statusText,
+          ok: response.ok 
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // Try to parse as JSON first, fallback to text
+        let responseData;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+          responseData = await response.json();
+        } else {
+          responseData = await response.text();
+        }
+        
+        debugLog(`Response data parsed`, { data: responseData });
+        
+        return { success: true, data: responseData, response };
+        
+      } catch (error) {
+        debugLog(`Request failed`, { error: error.message });
+        
+        if (error.name === 'AbortError') {
+          throw new Error('Request timeout - please check your connection');
+        }
+        
+        throw error;
+      }
+    }
+
+    // Connection Testing
+    async function testConnection() {
+      const testBtn = document.querySelector('button[onclick="testConnection()"]');
+      const testBtnText = document.getElementById("testBtnText");
+      
+      testBtn.disabled = true;
+      testBtnText.textContent = "Testing...";
+      
+      debugLog("Starting connection test");
       
       try {
-        adminUser = document.getElementById("adminUser").value.trim();
-        adminKey = document.getElementById("adminKey").value.trim();
-        const resp = await fetch(WEB_APP_URL+"?username="+adminUser+"&adminKey="+adminKey+"&action=login");
-        const text = await resp.text();
-        if (text.startsWith("✅")) {
-          document.getElementById("loginSection").style.display="none";
-          document.getElementById("dashboard").classList.remove("hidden");
-          showToast(text,"success");
-          startSessionTimer();
-          loadRegistrations();
-        } else {
-          showToast("❌ Login failed","error");
-        }
-      } catch(error) {
-        showToast("❌ Connection error","error");
+        // Test basic connectivity
+        const testUrl = `${CONFIG.WEB_APP_URL}?action=ping&timestamp=${Date.now()}`;
+        const result = await makeRequest(testUrl);
+        
+        updateConnectionStatus(true, "✅ Backend connected successfully");
+        showToast("✅ Backend connection successful", "success");
+        
+        return true;
+        
+      } catch (error) {
+        updateConnectionStatus(false, `❌ Connection failed: ${error.message}`);
+        showToast(`❌ Backend connection failed: ${error.message}`, "error");
+        
+        return false;
+        
       } finally {
-        loginBtn.textContent = "Login";
-        loginBtn.disabled = false;
+        testBtn.disabled = false;
+        testBtnText.textContent = "Test Backend Connection";
       }
+    }
+
+    // Authentication
+    async function login(mode = 'backend') {
+      const loginBtn = document.querySelector(`button[onclick="login('${mode}')"]`);
+      const btnText = mode === 'backend' ? document.getElementById("loginBtnText") : loginBtn.querySelector('span') || loginBtn;
+      const originalText = btnText.textContent;
+      
+      loginBtn.disabled = true;
+      btnText.textContent = "Logging in...";
+      
+      try {
+        state.adminUser = document.getElementById("adminUser").value.trim();
+        state.adminKey = document.getElementById("adminKey").value.trim();
+        
+        if (!state.adminUser || !state.adminKey) {
+          showToast("⚠️ Please enter both username and password", "warning");
+          return;
+        }
+        
+        debugLog(`Login attempt`, { mode, username: state.adminUser });
+        
+        if (mode === 'demo') {
+          // Demo mode - no backend required
+          if (state.adminUser === CONFIG.DEMO_CREDENTIALS.username && 
+              state.adminKey === CONFIG.DEMO_CREDENTIALS.password) {
+            
+            debugLog("Demo login successful");
+            state.loginMode = 'demo';
+            state.isLoggedIn = true;
+            
+            showSuccessfulLogin("🚀 Demo Mode - No backend required");
+            return;
+          } else {
+            throw new Error("Demo credentials: admin / admin123");
+          }
+        }
+        
+        // Backend mode
+        const loginUrl = `${CONFIG.WEB_APP_URL}?action=login&username=${encodeURIComponent(state.adminUser)}&adminKey=${encodeURIComponent(state.adminKey)}`;
+        const result = await makeRequest(loginUrl);
+        
+        // Check various success indicators
+        const data = result.data;
+        const isSuccess = 
+          (typeof data === 'string' && (data.includes('✅') || data.toLowerCase().includes('success'))) ||
+          (typeof data === 'object' && (data.success === true || data.status === 'success')) ||
+          result.response.ok;
+        
+        if (isSuccess) {
+          debugLog("Backend login successful");
+          state.loginMode = 'backend';
+          state.isLoggedIn = true;
+          
+          const message = typeof data === 'string' ? data : (data.message || "✅ Login successful");
+          showSuccessfulLogin(message);
+        } else {
+          const errorMsg = typeof data === 'string' ? data : (data.error || data.message || "Invalid credentials");
+          throw new Error(errorMsg);
+        }
+        
+      } catch (error) {
+        debugLog(`Login failed`, { error: error.message });
+        showToast(`❌ Login failed: ${error.message}`, "error");
+        
+      } finally {
+        loginBtn.disabled = false;
+        btnText.textContent = originalText;
+      }
+    }
+
+    function showSuccessfulLogin(message) {
+      document.getElementById("loginSection").style.display = "none";
+      document.getElementById("dashboard").classList.remove("hidden");
+      
+      // Update login mode indicator
+      const modeIndicator = document.getElementById("loginMode");
+      modeIndicator.textContent = `Mode: ${state.loginMode.toUpperCase()}`;
+      modeIndicator.className = state.loginMode === 'demo' ? 'warning' : 'success';
+      
+      showToast(message, "success");
+      startSessionTimer();
+      loadRegistrations();
     }
 
     async function logout() {
-      try {
-        await fetch(WEB_APP_URL+"?username="+adminUser+"&adminKey="+adminKey+"&action=logout");
-      } catch(e) {}
-      location.reload();
-    }
-
-    function startSessionTimer() {
-      clearTimeout(sessionTimer); 
-      clearTimeout(warningTimer);
-      warningTimer = setTimeout(()=> showToast("⚠️ Auto logout in 1 minute","warning"), 4*60*1000);
-      sessionTimer = setTimeout(()=> logout(), 5*60*1000);
-    }
-
-    // Placeholder functions for the actual functionality
-    async function loadRegistrations() {
-      // Simulate loading data
-      setTimeout(() => {
-        document.querySelector('#dataTable tbody').innerHTML = `
-          <tr>
-            <td>001</td>
-            <td>John Doe</td>
-            <td>M001</td>
-            <td>A</td>
-            <td>Online</td>
-            <td>Paid</td>
-            <td>2024-01-15</td>
-            <td>
-              <button class="btn btn-secondary" style="padding: 8px 15px; margin: 2px;">Edit</button>
-              <button class="btn btn-danger" style="padding: 8px 15px; margin: 2px;">Delete</button>
-            </td>
-          </tr>
-          <tr>
-            <td>002</td>
-            <td>Jane Smith</td>
-            <td>M002</td>
-            <td>B</td>
-            <td>Offline</td>
-            <td>Pending</td>
-            <td>2024-01-16</td>
-            <td>
-              <button class="btn btn-secondary" style="padding: 8px 15px; margin: 2px;">Edit</button>
-              <button class="btn btn-danger" style="padding: 8px 15px; margin: 2px;">Delete</button>
-            </td>
-          </tr>
-        `;
-      }, 1000);
-    }
-
-    function applyFilters() {
-      showToast("Filters applied", "success");
-    }
-
-    function exportFiltered() { showToast("Filtered CSV exported", "success"); }
-    function exportFilteredExcel() { showToast("Filtered Excel exported", "success"); }
-    function exportRegistrations() { showToast("All registrations exported", "success"); }
-    function exportAllExcel() { showToast("All Excel exported", "success"); }
-    function exportLogs() { showToast("Logs exported", "success"); }
-    function exportLogsExcel() { showToast("Logs Excel exported", "success"); }
-
-    function loadMembers() {
-      const section = document.getElementById("membersSection");
-      section.classList.toggle("hidden");
-      if (!section.classList.contains("hidden")) {
-        document.getElementById("membersTable").innerHTML = `
-          <table>
-            <thead>
-              <tr>
-                <th>Member No</th>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>M001</td>
-                <td>John Doe</td>
-                <td>Active</td>
-                <td>
-                  <button class="btn btn-secondary" style="padding: 8px 15px; margin: 2px;">Edit</button>
-                  <button class="btn btn-danger" style="padding: 8px 15px; margin: 2px;">Delete</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        `;
-      }
-    }
-
-    function loadDeletedMembers() {
-      const section = document.getElementById("deletedMembersSection");
-      section.classList.toggle("hidden");
-      if (!section.classList.contains("hidden")) {
-        document.getElementById("deletedMembersTable").innerHTML = `
-          <table>
-            <thead>
-              <tr>
-                <th>Member No</th>
-                <th>Name</th>
-                <th>Deleted Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>M003</td>
-                <td>Bob Johnson</td>
-                <td>2024-01-10</td>
-                <td>
-                  <button class="btn btn-success" style="padding: 8px 15px; margin: 2px;">Restore</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        `;
-      }
-    }
-
-    function addMember() {
-      const memberNo = document.getElementById("newMemberNo").value;
-      const memberName = document.getElementById("newMemberName").value;
-      const memberStatus = document.getElementById("newMemberStatus").value;
-      
-      if (memberNo && memberName) {
-        showToast("Member added successfully", "success");
-        // Clear form
-        document.getElementById("newMemberNo").value = "";
-        document.getElementById("newMemberName").value = "";
-      } else {
-        showToast("Please fill all fields", "error");
-      }
-    }
-
-    // Handle Enter key for login
-    document.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter' && !document.getElementById("loginSection").style.display.includes('none')) {
-        login();
-      }
-    });
-  </script>
-</body>
-</html>
+      debugLog("Logging out");
